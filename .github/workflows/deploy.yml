@@ -32,7 +32,11 @@ jobs:
         run: |
           cd frontend
           npm install
-          npm run build
+          npm run build --outDir ../docs
+
+          - name: Copy data into docs
+  run: |
+    cp -r data docs/data
 
       # Deploy to GH-Pages
       - name: Deploy to GitHub Pages
@@ -40,4 +44,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages 
-          publish_dir: ./frontend/build
+          publish_dir: ./docs

@@ -1,6 +1,15 @@
+name: Build & Deploy to GH Pages
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: '0 * * * *'    # jede Stunde
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -10,38 +19,44 @@ jobs:
         with:
           node-version: '18'
 
-      # Backend bauen
-      - name: Install & Build Backend
+      # 1) Build & run fetcher (Server-only)
+      - name: Install Server Dependencies
         run: |
           cd server
           npm install
+
+      - name: Build Server
+        run: |
+          cd server
           npm run build
 
-      # Hier rufst du das fertige Script auf
-      - name: Run fetcher to update data
+      - name: Run Fetcher to populate data/
+        # Wir führen nur das UpdateAll-Skript aus, nicht den Webserver dauerhaft
         run: |
-          node dist/server/index.js
+          node server/dist/server/index.js --only-fetch
+        # Passe deine index.ts so an, dass bei --only-fetch nur fetchAll läuft und dann exit
 
-      # Kopiere die frisch aktualisierte JSON in dein frontend/public
-      - name: Copy market_data.json to Frontend
-        run: |
-          cp data/market_data.json frontend/public/data/market_data.json
-
-      # Frontend bauen
-      - name: Install & Build Frontend
+      # 2) Build Frontend into docs/
+      - name: Install Frontend Dependencies
         run: |
           cd frontend
           npm install
+
+      - name: Build Frontend
+        run: |
+          cd frontend
           npm run build --outDir ../docs
 
-          - name: Copy data into docs
-  run: |
-    cp -r data docs/data
+      # 3) Copy the freshly populated data folder
+      - name: Copy data into docs
+        run: |
+          mkdir -p docs/data
+          cp -r data/* docs/data/
 
-      # Deploy to GH-Pages
+      # 4) Deploy to GH Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_branch: gh-pages 
-          publish_dir: ./docs
+          publish_branch: main
+          publish_dir: docs

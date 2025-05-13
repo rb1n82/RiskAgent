@@ -504,7 +504,11 @@ app.use((_req, res) => {
   res.sendFile(path.join(frontDir, 'index.html'));
 });
 
-
+if (process.argv.includes('--only-fetch')) {
+  updateAll().then(() => process.exit(0));
+} else {
+  app.listen(PORT, () => console.log(…));
+}
    
    
    app.listen(PORT,()=>{ console.log(`🚀 API @ http://localhost:${PORT}`); console.log('CG_KEY', process.env.CG_PRO_KEY?.slice(0,6)); updateAll(); setInterval(updateAll,UPDATE_EVERY); });
